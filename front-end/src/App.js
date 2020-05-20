@@ -1,14 +1,75 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Redirect,
+  Switch,
+} from 'react-router-dom';
 import './App.css';
+import Users from './users/pages/Users';
+import NewPlace from './places/pages/NewPlace';
+import MainNavigation from './shared/components/Navigation/MainNavigation';
+import UsersPlaces from './places/pages/UsersPlaces';
+import UpdatePlace from './places/pages/UpdatePlace';
+import Auth from './users/pages/Auth';
+import { AuthContext } from './shared/context/auth-context';
 
-function App() {
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const login = useCallback(() => {
+    setIsLoggedIn(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    setIsLoggedIn(false);
+  }, []);
+
+  let routes;
+
+  if (isLoggedIn) {
+    routes = (
+      <Switch>
+        <Route path='/' exact>
+          <Users />
+        </Route>
+        <Route path='/:userId/places' exact>
+          <UsersPlaces />
+        </Route>
+        <Route path='/places/new' exact>
+          <NewPlace />
+        </Route>
+        <Route path='/places/:placeId'>
+          <UpdatePlace />
+        </Route>
+        <Redirect to='/' />
+      </Switch>
+    );
+  } else {
+    routes = (
+      <Switch>
+        <Route path='/' exact>
+          <Users />
+        </Route>
+        <Route path='/:userId/places' exact>
+          <UsersPlaces />
+        </Route>
+        <Route path='/auth'>
+          <Auth />
+        </Route>
+        <Redirect to='/auth' />
+      </Switch>
+    );
+  }
+
   return (
-    <div className='App'>
-      <header className='App-header'>
-        <h1>Hello there!</h1>
-      </header>
-    </div>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+      <Router>
+        <MainNavigation />
+        <main>{routes}</main>
+      </Router>
+    </AuthContext.Provider>
   );
-}
+};
 
 export default App;
