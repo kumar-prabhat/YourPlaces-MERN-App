@@ -5,20 +5,29 @@ import Button from '../../shared/components/FormElements/Button';
 import Modal from '../../shared/components/UIElements/Modal';
 import Map from '../../shared/components/UIElements/Map';
 import { AuthContext } from '../../shared/context/auth-context';
+import ErrorModal from '../../shared/components/UIElements/ErrorModal';
+import LoadingSpinner from '../../shared/components/UIElements/LoadingSpinner';
+import { useHttpClient } from '../../shared/hooks/http-hook';
 
 const PlaceItem = ({
-  place: { id, imageUrl, title, address, description, creator, location },
+  place: { id, image, title, address, description, creator, location },
+  onDelete,
 }) => {
   const auth = useContext(AuthContext);
   const [showMap, setShowMap] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
 
-  const confirmDeletePlace = () => {
+  const confirmDeletePlace = async () => {
     setShowConfirmModal(false);
-    console.log('DELETING....');
+    try {
+      await sendRequest(`http://localhost:5000/api/places/${id}`, 'DELETE');
+      onDelete(id);
+    } catch (err) {}
   };
   return (
     <Fragment>
+      <ErrorModal error={error} onClear={clearError} />
       <Modal
         show={showMap}
         onCancel={() => setShowMap(false)}
@@ -54,8 +63,9 @@ const PlaceItem = ({
       </Modal>
       <li className='place-item'>
         <Card className='place-item__content'>
+          {isLoading && <LoadingSpinner asOverlay />}
           <div className='place-item__image'>
-            <img src={imageUrl} alt={title}></img>
+            <img src={image} alt={title}></img>
           </div>
           <div className='place-item__info'>
             <h2>{title}</h2>
@@ -66,7 +76,7 @@ const PlaceItem = ({
             <Button inverse onClick={() => setShowMap(true)}>
               VIEW ON MAP
             </Button>
-            {auth.isLoggedIn && (
+            {auth.userId === creator && (
               <Fragment>
                 <Button to={`/places/${id}`}>EDIT</Button>
                 <Button danger onClick={() => setShowConfirmModal(true)}>

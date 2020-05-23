@@ -1,49 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { Fragment, useEffect, useState, useContext } from 'react';
+import { useParams, useHistory } from 'react-router-dom';
 import './PlaceForm.css';
 
 import Input from '../../shared/components/FormElements/Input';
 import Button from '../../shared/components/FormElements/Button';
+import ErrorModal from '../../shared/components/UIElements/ErrorModal';
+import LoadingSpinner from '../../shared/components/UIElements/LoadingSpinner';
+
 import { useForm } from '../../shared/hooks/form-hook';
+import { useHttpClient } from '../../shared/hooks/http-hook';
+import { AuthContext } from '../../shared/context/auth-context';
+
 import {
   VALIDATOR_REQUIRE,
   VALIDATOR_MINLENGTH,
 } from '../../shared/util/validators';
 import Card from '../../shared/components/UIElements/Card';
 
-const DUMMY_PLACES = [
-  {
-    id: 'p1',
-    imageUrl:
-      'https://media.gettyimages.com/photos/the-new-urban-bangalore-city-skyline-picture-id599531522?s=2048x2048',
-    title: 'Microsoft',
-    address: 'Microsoft Signature Building,Bengaluru',
-    description: 'Best company in bangalore',
-    creator: 'u1',
-    location: {
-      lat: '12.973167',
-      lng: '77.6798206',
-    },
-  },
-  {
-    id: 'p2',
-    imageUrl:
-      'https://media.gettyimages.com/photos/the-new-urban-bangalore-city-skyline-picture-id599531522?s=2048x2048',
-    title: 'Amazon building',
-    address: 'Microsoft Signature Building, Domlur, Bengaluru, Karnataka',
-    description: 'Best company in bangalore',
-    creator: 'u2',
-    location: {
-      lat: '12.973167',
-      lng: '77.6798206',
-    },
-  },
-];
-
 const UpdatePlace = () => {
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
+
   const placeId = useParams().placeId;
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadedPlace, setLoadedPlace] = useState();
+  const history = useHistory();
+  const auth = useContext(AuthContext);
 
   const [formState, inputHandler, setFormData] = useForm(
     {
@@ -59,33 +40,59 @@ const UpdatePlace = () => {
     false
   );
 
-  const identifiedPlace = DUMMY_PLACES.find((place) => place.id === placeId);
-
   useEffect(() => {
-    if (identifiedPlace) {
-      setFormData(
-        {
-          title: {
-            value: identifiedPlace.title,
-            isValid: true,
+    const fetchPlace = async () => {
+      try {
+        const responseData = await sendRequest(
+          `http://localhost:5000/api/places/${placeId}`
+        );
+        setFormData(
+          {
+            title: {
+              value: responseData.place.title,
+              isValid: true,
+            },
+            description: {
+              value: responseData.place.description,
+              isValid: true,
+            },
           },
-          description: {
-            value: identifiedPlace.description,
-            isValid: true,
-          },
-        },
-        true
-      );
-    }
-    setIsLoading(false);
-  }, [setFormData, identifiedPlace]);
+          true
+        );
+        setLoadedPlace(responseData.place);
+      } catch (err) {}
+    };
+    fetchPlace();
+  }, [sendRequest, placeId, setFormData]);
 
-  const updatePlaceHandler = (event) => {
+  const updatePlaceHandler = async (event) => {
     event.preventDefault();
-    console.log(formState.inputs);
+
+    try {
+      await sendRequest(
+        `http://localhost:5000/api/place/${placeId}`,
+        'PATCH',
+        JSON.stringify({
+          title: formState.inputs.title.value,
+          description: formState.inputs.description.value,
+        }),
+        {
+          'Content-Type': 'application/json',
+        }
+      );
+      history.push('/' + auth.userId + '/places');
+    } catch (err) {}
   };
 
-  if (!identifiedPlace) {
+  if (isLoading) {
+    return (
+      <div className='center'>
+        <LoadingSpinner asOverlay />
+      </div>
+    );
+  }
+
+  if (!loadedPlace && !error) {
     return (
       <div className='center'>
         <Card className='p-1'>
@@ -95,41 +102,39 @@ const UpdatePlace = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className='center'>
-        <h1>Loading...</h1>
-      </div>
-    );
-  }
   return (
-    <form className='place-form' onSubmit={updatePlaceHandler}>
-      <Input
-        id='title'
-        element='input'
-        type='text'
-        label='Title'
-        validators={[VALIDATOR_REQUIRE()]}
-        errorText='Please enter a valid title.'
-        onInput={inputHandler}
-        initialValue={formState.inputs.title.value}
-        initialValid={formState.inputs.title.isValid}
-      />
-      <Input
-        id='description'
-        element='textarea'
-        label='Description'
-        validators={[VALIDATOR_MINLENGTH(5)]}
-        errorText='Please enter a valid description (at least 5 characters).'
-        onInput={() => {}}
-        initialValue={formState.inputs.description.value}
-        initialValid={formState.inputs.description.isValid}
-      />
+    <Fragment>
+      <ErrorModal error={error} onClear={clearError} />{' '}
+      {!isLoading && loadedPlace && (
+        <form className='place-form' onSubmit={updatePlaceHandler}>
+          <Input
+            id='title'
+            element='input'
+            type='text'
+            label='Title'
+            validators={[VALIDATOR_REQUIRE()]}
+            errorText='Please enter a valid title.'
+            onInput={inputHandler}
+            initialValue={loadedPlace.title}
+            initialValid={true}
+          />
+          <Input
+            id='description'
+            element='textarea'
+            label='Description'
+            validators={[VALIDATOR_MINLENGTH(5)]}
+            errorText='Please enter a valid description (at least 5 characters).'
+            onInput={inputHandler}
+            initialValue={loadedPlace.description}
+            initialValid={true}
+          />
 
-      <Button type='submit' disabled={!formState.isValid}>
-        UPDATE PLACE
-      </Button>
-    </form>
+          <Button type='submit' disabled={!formState.isValid}>
+            UPDATE PLACE
+          </Button>
+        </form>
+      )}
+    </Fragment>
   );
 };
 

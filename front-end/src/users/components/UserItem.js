@@ -15,8 +15,8 @@ const UserItem = ({ user }) => {
           <div className='user-item__info'>
             <h2>{user.name}</h2>
             <h3>
-              {user.places}
-              {user.places > 1 ? ' Places' : ' Place'}
+              {user.places.length}
+              {user.places.length > 1 ? ' Places' : ' Place'}
             </h3>
           </div>
         </Link>

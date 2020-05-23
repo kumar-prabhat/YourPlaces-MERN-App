@@ -1,40 +1,48 @@
-import React from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import PlaceLists from '../components/PlaceLists';
 import { useParams } from 'react-router-dom';
+import { useHttpClient } from '../../shared/hooks/http-hook';
+import ErrorModal from '../../shared/components/UIElements/ErrorModal';
+import LoadingSpinner from '../../shared/components/UIElements/LoadingSpinner';
 
 const UsersPlaces = (props) => {
-  const DUMMY_PLACES = [
-    {
-      id: 'p1',
-      imageUrl:
-        'https://media.gettyimages.com/photos/the-new-urban-bangalore-city-skyline-picture-id599531522?s=2048x2048',
-      title: 'Microsoft',
-      address: 'Microsoft Signature Building,Bengaluru',
-      description: 'Best company in bangalore',
-      creator: 'u1',
-      location: {
-        lat: '12.973167',
-        lng: '77.6798206',
-      },
-    },
-    {
-      id: 'p2',
-      imageUrl:
-        'https://media.gettyimages.com/photos/the-new-urban-bangalore-city-skyline-picture-id599531522?s=2048x2048',
-      title: 'Amazon building',
-      address: 'Microsoft Signature Building, Domlur, Bengaluru, Karnataka',
-      description: 'Best company in bangalore',
-      creator: 'u2',
-      location: {
-        lat: '12.973167',
-        lng: '77.6798206',
-      },
-    },
-  ];
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
+  const [loadedPlaces, setLoadedPlaces] = useState();
 
   const userId = useParams().userId;
-  const loadedPlaces = DUMMY_PLACES.filter((place) => place.creator === userId);
-  return <PlaceLists items={loadedPlaces} />;
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      try {
+        const responseData = await sendRequest(
+          `http://localhost:5000/api/places/user/${userId}`
+        );
+        setLoadedPlaces(responseData.places);
+      } catch (err) {}
+    };
+    fetchPlaces();
+  }, [sendRequest, userId]);
+
+  const deletePlaceHandler = (deletedPlaceId) => {
+    console.log(deletedPlaceId);
+
+    setLoadedPlaces((prevPlaces) =>
+      prevPlaces.filter((p) => p.id !== deletedPlaceId)
+    );
+  };
+
+  return (
+    <Fragment>
+      <ErrorModal error={error} onClear={clearError} />
+      {isLoading && (
+        <div className='center'>
+          <LoadingSpinner asOverlay />
+        </div>
+      )}
+      {!isLoading && loadedPlaces && (
+        <PlaceLists items={loadedPlaces} onDeletePlace={deletePlaceHandler} />
+      )}
+    </Fragment>
+  );
 };
 
 export default UsersPlaces;
