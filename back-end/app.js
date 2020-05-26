@@ -6,6 +6,8 @@ const placesRoutes = require('./routes/places-routes');
 const usersRoutes = require('./routes/users-routes');
 const HttpError = require('./models/http-error');
 const mongoose = require('mongoose');
+const config = require('config');
+const db = config.get('mongoURI');
 
 const app = express();
 
@@ -42,10 +44,11 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(
-    'mongodb+srv://prabhatpd1723:prabhatpd1723@your-places-bwier.mongodb.net/places?retryWrites=true&w=majority',
-    { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true }
-  )
+  .connect(db, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+  })
   .then(() => {
     console.log('Server running');
 

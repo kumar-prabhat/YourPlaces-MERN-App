@@ -101,7 +101,6 @@ const updatePlace = async (req, res, next) => {
     return res.status(422).json({ errors: errors.array() });
   }
   const { title, description } = req.body;
-  console.log(title, description);
 
   const placeId = req.params.pid;
   let place;

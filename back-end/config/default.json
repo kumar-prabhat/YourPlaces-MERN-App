@@ -1,0 +1,4 @@
+{
+  "mongoURI": "mongodb+srv://prabhatpd1723:prabhatpd1723@your-places-bwier.mongodb.net/places?retryWrites=true&w=majority",
+  "jwtSecret": "supersecret_token_dont_share"
+}

@@ -14,7 +14,7 @@ const UsersPlaces = (props) => {
     const fetchPlaces = async () => {
       try {
         const responseData = await sendRequest(
-          `http://localhost:5000/api/places/user/${userId}`
+          `${process.env.REACT_APP_BACKEND_URL}/places/user/${userId}`
         );
         setLoadedPlaces(responseData.places);
       } catch (err) {}
@@ -23,8 +23,6 @@ const UsersPlaces = (props) => {
   }, [sendRequest, userId]);
 
   const deletePlaceHandler = (deletedPlaceId) => {
-    console.log(deletedPlaceId);
-
     setLoadedPlaces((prevPlaces) =>
       prevPlaces.filter((p) => p.id !== deletedPlaceId)
     );
