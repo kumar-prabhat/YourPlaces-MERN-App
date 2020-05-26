@@ -70,7 +70,7 @@ const UpdatePlace = () => {
 
     try {
       await sendRequest(
-        `http://localhost:5000/api/place/${placeId}`,
+        `http://localhost:5000/api/places/${placeId}`,
         'PATCH',
         JSON.stringify({
           title: formState.inputs.title.value,
@@ -78,6 +78,7 @@ const UpdatePlace = () => {
         }),
         {
           'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + auth.token,
         }
       );
       history.push('/' + auth.userId + '/places');

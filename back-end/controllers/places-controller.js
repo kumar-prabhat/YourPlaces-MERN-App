@@ -4,6 +4,7 @@ const getCoordinates = require('../util/location');
 const Place = require('../models/place');
 const User = require('../models/user');
 const mongoose = require('mongoose');
+const fs = require('fs');
 
 const getPlaceById = async (req, res, next) => {
   const placeId = req.params.pid;
@@ -52,7 +53,7 @@ const createPlace = async (req, res, next) => {
     return res.status(422).json({ errors: errors.array() });
   }
 
-  const { title, address, description, creator } = req.body;
+  const { title, address, description } = req.body;
 
   const coordinates = await getCoordinates(address);
 
@@ -60,16 +61,15 @@ const createPlace = async (req, res, next) => {
     title,
     address,
     description,
-    creator,
-    image:
-      'https://media.gettyimages.com/photos/the-new-urban-bangalore-city-skyline-picture-id599531522?s=2048x2048',
+    creator: req.userData.userId,
+    image: req.file.path,
     location: coordinates,
   });
 
   let user;
 
   try {
-    user = await User.findById(creator);
+    user = await User.findById(req.userData.userId);
   } catch (err) {
     const error = new HttpError('Creating place failed, please try again', 500);
     return next(error);
@@ -79,8 +79,6 @@ const createPlace = async (req, res, next) => {
     const error = new HttpError('Could not find user for provided id', 404);
     return next(error);
   }
-
-  console.log(user);
 
   try {
     const sess = await mongoose.startSession();
@@ -115,6 +113,10 @@ const updatePlace = async (req, res, next) => {
     );
   }
 
+  if (place.creator.toString() !== req.userData.userId) {
+    return next(new HttpError('You are not allowed to update this place', 401));
+  }
+
   place.title = title;
   place.description = description;
 
@@ -147,6 +149,12 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
 
+  const imagePath = place.image;
+
+  if (place.creator.id !== req.userData.userId) {
+    return next(new HttpError('You are not allowed to delete this place', 401));
+  }
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -161,6 +169,8 @@ const deletePlace = async (req, res, next) => {
     );
     return next(error);
   }
+
+  fs.unlink(imagePath, (err) => console.log(err));
 
   res.status(200).json({ message: 'Deleted place' });
 };

@@ -21,7 +21,14 @@ const PlaceItem = ({
   const confirmDeletePlace = async () => {
     setShowConfirmModal(false);
     try {
-      await sendRequest(`http://localhost:5000/api/places/${id}`, 'DELETE');
+      await sendRequest(
+        `http://localhost:5000/api/places/${id}`,
+        'DELETE',
+        null,
+        {
+          Authorization: 'Bearer ' + auth.token,
+        }
+      );
       onDelete(id);
     } catch (err) {}
   };
@@ -65,7 +72,7 @@ const PlaceItem = ({
         <Card className='place-item__content'>
           {isLoading && <LoadingSpinner asOverlay />}
           <div className='place-item__image'>
-            <img src={image} alt={title}></img>
+            <img src={`http://localhost:5000/${image}`} alt={title}></img>
           </div>
           <div className='place-item__info'>
             <h2>{title}</h2>

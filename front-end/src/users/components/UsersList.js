@@ -7,7 +7,7 @@ const UsersList = ({ items }) => {
   if (items.length === 0) {
     return (
       <div className='center'>
-        <Card>
+        <Card className='p-1'>
           <h2>No users found</h2>
         </Card>
       </div>
