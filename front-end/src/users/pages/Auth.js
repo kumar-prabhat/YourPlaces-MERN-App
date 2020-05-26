@@ -103,7 +103,7 @@ const Auth = () => {
   return (
     <Fragment>
       <ErrorModal error={error} onClear={clearError} />
-      <Card className='p-1 authentication'>
+      <Card className='authentication'>
         {isLoading && <LoadingSpinner asOverlay />}
         <h1>{isLoginMode ? 'Login Required' : 'SignUp Here'}</h1>
         <hr />
